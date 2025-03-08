@@ -23,7 +23,7 @@ WORKDIR /root/
 # Copy the built application from the builder stage
 COPY --from=builder /app/go-app .
 
-# Expose port 8080
+# Expose port 8000 instead of 8080
 EXPOSE 8000
 
 # Command to run the application
