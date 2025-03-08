@@ -1,3 +1,4 @@
+
 name: CI/CD Pipeline
 
 on:
@@ -21,10 +22,14 @@ jobs:
         with:
           go-version: 1.20
 
+      - name: Install Go dependencies
+        run: |
+          go mod tidy
+          go get github.com/gorilla/mux
+
       - name: Build application
         run: |
-          # Build the Go application with CGO_DISABLED and target architecture
-          CGO_ENABLED=0 GOARCH=amd64 go build -o go-app
+          go build -o go-app
 
       - name: Archive files
         run: |
@@ -54,6 +59,5 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          # Build the Docker image
           docker build -t navaneetha084/go-app:latest .
           docker push navaneetha084/go-app:latest
