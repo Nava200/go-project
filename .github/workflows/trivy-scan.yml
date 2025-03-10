@@ -1,4 +1,4 @@
-name: Trivy Security Scan
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,13 +7,27 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: '0 0 * * 1' # Runs every Monday at midnight
 
 jobs:
-  scan-docker-image:
-    name: Scan Docker Image
+  build:
+    name: Build and Test
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Add your build and test steps here
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.18'
+
+      # Add other build steps, like testing, building Docker image, etc.
+
+  scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+    needs: build  # Ensures this runs after the build job
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -22,30 +36,12 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y wget
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo tee /etc/apt/trusted.gpg.d/trivy.asc
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb stable main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt update
-          sudo apt install -y trivy
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.deb
+          sudo dpkg -i trivy_0.34.0_Linux-64bit.deb
 
       - name: Scan Docker Image for Vulnerabilities
         run: |
           trivy image navaneetha084/go-app:latest
-
-  scan-repo:
-    name: Scan Repository
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install Trivy
-        run: |
-          sudo apt update
-          sudo apt install -y wget
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo tee /etc/apt/trusted.gpg.d/trivy.asc
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb stable main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt update
-          sudo apt install -y trivy
 
       - name: Scan Repository for Vulnerabilities
         run: |
