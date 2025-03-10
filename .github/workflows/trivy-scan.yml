@@ -22,9 +22,10 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y wget
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.4_Linux-64bit.tar.gz
-          tar -xvzf trivy_0.50.4_Linux-64bit.tar.gz
-          sudo mv trivy /usr/local/bin/
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo tee /etc/apt/trusted.gpg.d/trivy.asc
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb stable main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt update
+          sudo apt install -y trivy
 
       - name: Scan Docker Image for Vulnerabilities
         run: |
@@ -41,9 +42,10 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y wget
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.4_Linux-64bit.tar.gz
-          tar -xvzf trivy_0.50.4_Linux-64bit.tar.gz
-          sudo mv trivy /usr/local/bin/
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo tee /etc/apt/trusted.gpg.d/trivy.asc
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb stable main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt update
+          sudo apt install -y trivy
 
       - name: Scan Repository for Vulnerabilities
         run: |
