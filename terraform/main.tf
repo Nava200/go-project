@@ -1,35 +1,22 @@
 provider "aws" {
-  region = "us-east-1"  # Change to your AWS region
+  region = "us-east-1"  # Change to your preferred AWS region
 }
 
-resource "aws_instance" "go_app" {
-  ami           = "ami-01f5a0b78d6089704"  # Latest Amazon Linux 2 AMI for us-east-1
-  instance_type = "t2.micro"
-  key_name      = "webapp"  # Replace with your actual EC2 key pair name
+# Fetch latest Amazon Linux 2 AMI
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
 
-  security_groups = [aws_security_group.allow_http.name]
-
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              amazon-linux-extras enable docker
-              yum install -y docker
-              service docker start
-              usermod -aG docker ec2-user
-              docker pull navaneetha084/go-app:latest  # ✅ Correct Docker image
-              docker stop go-app || true
-              docker rm go-app || true
-              docker run -d -p 80:8080 --name go-app navaneetha084/go-app:latest  # ✅ Runs the app
-              EOF
-
-  tags = {
-    Name = "go-app-instance"
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
 }
 
+# Security Group to allow HTTP and SSH traffic
 resource "aws_security_group" "allow_http" {
   name        = "allow_http"
-  description = "Allow HTTP access"
+  description = "Allow HTTP and SSH inbound traffic"
 
   ingress {
     from_port   = 80
@@ -37,4 +24,44 @@ resource "aws_security_group" "allow_http" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# EC2 Instance
+resource "aws_instance" "go_app" {
+  ami                    = data.aws_ami.amazon_linux.id
+  instance_type          = "t2.micro"
+  key_name               = "myfirst"  # Ensure this key exists in AWS
+  security_groups        = [aws_security_group.allow_http.name]
+
+  tags = {
+    Name = "go-app-instance"
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update -y
+              sudo yum install -y docker
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              docker run -d -p 80:80 nginx
+              EOF
+}
+
+# Output the public IP of the instance
+output "instance_public_ip" {
+  value = aws_instance.go_app.public_ip
 }
