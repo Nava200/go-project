@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_instance" "go_app" {
-  ami           = "ami-0c55b159cbfafe1f0"  # Amazon Linux AMI, change if needed
+  ami           = "ami-05716d7e60b53d380"  # Amazon Linux AMI, change if needed
   instance_type = "t2.micro"
   key_name      = "your-key"  # Update with your key pair name
 
