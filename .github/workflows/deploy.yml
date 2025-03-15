@@ -1,0 +1,27 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # Change this to your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup SSH Key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ec2-user@your-ec2-public-ip << 'EOF'
+            docker stop go-app || true
+            docker rm go-app || true
+            docker pull navaneetha084/go-app:latest
+            docker run -d --name go-app -p 8080:8080 navaneetha084/go-app:latest
+          EOF
