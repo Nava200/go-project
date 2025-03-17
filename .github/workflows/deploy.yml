@@ -32,6 +32,6 @@ jobs:
             docker rm go-app || true
             echo "Pulling latest image..."
             docker pull navaneetha084/go-app:latest
-            echo "Starting new container..."
-            docker run -d --name go-app -p 8080:8080 navaneetha084/go-app:latest
+            echo "Starting new container on port 8000..."
+            docker run -d --name go-app -p 8000:8000 navaneetha084/go-app:latest
             echo "Deployment successful!"
