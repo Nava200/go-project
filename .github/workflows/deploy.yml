@@ -1,48 +1,43 @@
-name: Deploy to EC2
+name: Deploy Go App to EC2
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger deployment on push to the main branch (adjust as needed)
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+    - name: Checkout the repository
+      uses: actions/checkout@v2
 
-      - name: Debug SSH Connection
-        run: |
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" > private_key.pem
-          chmod 600 private_key.pem
-          echo "Checking EC2 connectivity..."
-          ssh -o StrictHostKeyChecking=no -i private_key.pem ec2-user@${{ secrets.EC2_HOST }} "echo Connected to EC2 successfully!"
+    - name: SSH into EC2 and deploy app
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        script: |
+          # Pull the latest Docker image from Docker Hub
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/go-app:latest
 
-      - name: SSH into EC2 and Deploy
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            echo "Stopping existing app..."
-            docker stop go-app || true
-            docker rm go-app || true
-            echo "Pulling latest image..."
-            docker pull navaneetha084/go-app:latest
-            echo "Starting new container on port 8000..."
-            docker run -d --name go-app -p 8000:8000 navaneetha084/go-app:latest
-            echo "Deployment successful!"
+          # Stop and remove the existing container if it is running
+          docker stop go-app || true
+          docker rm go-app || true
 
-      - name: Verify Deployment
-        run: |
-          echo "Verifying if the app is running..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" http://$${{ secrets.EC2_HOST }}:8000)
-          if [ "$response" -eq 200 ]; then
-            echo "App is successfully deployed!"
-          else
-            echo "Failed to deploy the app. Response code: $response"
-            exit 1
-          fi
+          # Run the new Docker container
+          docker run -d --name go-app -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/go-app:latest
+
+    # Step 5: Verify Deployment
+    - name: Verify Deployment
+      run: |
+        echo "Verifying if the app is running..."
+        response=$(curl -s -w "%{http_code}" -o /dev/null http://${{ secrets.EC2_HOST }}:8000)
+        if [ "$response" -eq 200 ]; then
+          echo "App is successfully deployed!"
+        else
+          echo "Failed to deploy the app. Response code: $response"
+          exit 1
+        fi
