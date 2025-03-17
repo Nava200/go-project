@@ -1,42 +1,48 @@
-name: Deploy Go App
+name: Deploy to EC2
 
 on:
-  workflow_run:
-    workflows: ["CI/CD Pipeline", "Trivy Security Scan"]
-    types:
-      - completed
+  push:
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: SSH into EC2 and deploy app
-        uses: appleboy/ssh-action@v0.1.7
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Debug SSH Connection
+        run: |
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+          echo "Checking EC2 connectivity..."
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ec2-user@${{ secrets.EC2_HOST }} "echo Connected to EC2 successfully!"
+
+      - name: SSH into EC2 and Deploy
+        uses: appleboy/ssh-action@v0.1.10
         with:
-          host: ${{ secrets.EC2_IP }}
+          host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
-            # Pull the latest Docker image
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/go-app:latest
-
-            # Stop and remove the old container if it exists
+            echo "Stopping existing app..."
             docker stop go-app || true
             docker rm go-app || true
+            echo "Pulling latest image..."
+            docker pull navaneetha084/go-app:latest
+            echo "Starting new container on port 8000..."
+            docker run -d --name go-app -p 8000:8000 navaneetha084/go-app:latest
+            echo "Deployment successful!"
 
-            # Run the new container
-            docker run -d --name go-app -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/go-app:latest
-
-            # Wait for the app to start
-            sleep 5
-
-            # Check if the app is running
-            if curl -s http://${{ secrets.EC2_IP }}:8000; then
-              echo "✅ Application is running successfully!"
-            else
-              echo "❌ Failed to start application."
-              exit 1
-            fi
+      - name: Verify Deployment
+        run: |
+          echo "Verifying if the app is running..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" http://$${{ secrets.EC2_HOST }}:8000)
+          if [ "$response" -eq 200 ]; then
+            echo "App is successfully deployed!"
+          else
+            echo "Failed to deploy the app. Response code: $response"
+            exit 1
+          fi
