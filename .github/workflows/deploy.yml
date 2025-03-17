@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # Change this to your deployment branch
+      - main
 
 jobs:
   deploy:
@@ -13,6 +13,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Debug SSH Connection
+        run: |
+          echo "Checking EC2 connectivity..."
+          ssh -o StrictHostKeyChecking=no -i <(echo "${{ secrets.EC2_PRIVATE_KEY }}") ec2-user@${{ secrets.EC2_HOST }} "echo Connected to EC2 successfully!"
+      
       - name: SSH into EC2 and Deploy
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -20,7 +25,11 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
+            echo "Stopping existing app..."
             docker stop go-app || true
             docker rm go-app || true
+            echo "Pulling latest image..."
             docker pull navaneetha084/go-app:latest
+            echo "Starting new container..."
             docker run -d --name go-app -p 8080:8080 navaneetha084/go-app:latest
+            echo "Deployment successful!"
