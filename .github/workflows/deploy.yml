@@ -42,8 +42,3 @@ jobs:
               echo "❌ Failed to start application."
               exit 1
             fi
-
-      - name: Display App URL
-        run: |
-          echo "✅ Your Go App is deployed successfully!"
-          echo "🔗 Click to open: http://${{ secrets.EC2_HOST }}:8000"
