@@ -43,5 +43,6 @@ jobs:
 
       - name: Display App URL
         run: |
-          echo "íº€ Your Go App is deployed!"
-          echo "í´— Click to open: http://${{ secrets.EC2_HOST }}:8000"
+          echo "Your Go App is deployed successfully!"
+          echo "Click to open: http://${{ secrets.EC2_HOST }}:8000"
+
