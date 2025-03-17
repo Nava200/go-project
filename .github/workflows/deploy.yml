@@ -2,7 +2,7 @@ name: Deploy Go App
 
 on:
   workflow_run:
-    workflows: ["CI/CD Pipeline", "Trivy Security Scan"]
+    workflows: ["Trivy Security Scan"]
     types:
       - completed
 
@@ -40,4 +40,3 @@ jobs:
               echo "❌ Failed to start application."
               exit 1
             fi
-
