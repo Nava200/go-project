@@ -44,4 +44,4 @@ jobs:
       - name: Display App URL
         run: |
           echo "🚀 Your Go App is deployed successfully!"
-          echo "🔗 Click to open: http://${{ secrets.EC2_IP }}:8000"
+          echo "🔗 Click to open: http://3.148.105.22:8000"
