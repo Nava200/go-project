@@ -22,8 +22,8 @@ jobs:
 
       - name: Scan Docker Image for Vulnerabilities
         run: |
-          trivy image navaneetha084/go-app:latest
+          trivy image --format table navaneetha084/go-app:latest
 
       - name: Scan Repository for Vulnerabilities
         run: |
-          trivy repo https://github.com/Nava200/go-project
+          trivy repo --format table https://github.com/Nava200/go-project
